@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TASK-4</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+    <h1>Book's List</h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Author</th>
+            <th>year</th> 
+        </tr>
+        </thead>
+        <tbody id="booksList">
+        </tbody>
+    </table>
+
+    <h2>Create Book</h2>
+    <form id="createBookForm">
+        <div class="mb-3">
+            <label for="nameInput" class="form-label">Name</label>
+            <input type="text" class="form-control" id="nameInput" required>
+        </div>
+        <div class="mb-3">
+            <label for="authorInput" class="form-label">Author</label>
+            <input type="text" class="form-control" id="authorInput" required>
+        </div>
+        <div class="mb-3">
+            <label for="yearInput" class="form-label">year</label>
+            <input type="number" class="form-control" id="yearInput" step="1" required>
+        </div>
+        <button type="submit" class="btn btn-success">Create</button>
+    </form>
+</div>
+
+<script>
+    async function fetchbooks() {
+        try {
+            const response = await fetch('/books');
+            if (response.ok) {
+                const books = await response.json();
+                const booksList = document.getElementById('booksList');
+                booksList.innerHTML = '';
+
+                books.forEach(book => {3
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = book.name;
+                    const authorCell = document.createElement('td');
+                    authorCell.textContent = book.author;
+                    const yearCell = document.createElement('td');
+                    yearCell.textContent = book.year;
+
+
+                    const deleteButtonCell = document.createElement('td');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'btn btn-danger';
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.addEventListener('click', () => {
+                        deleteBook(book._id);
+                    });
+                    deleteButtonCell.appendChild(deleteButton);
+
+                    const editButtonCell = document.createElement('td');
+                    const editButton = document.createElement('button');
+                    editButton.className = 'btn btn-primary';
+                    editButton.textContent = 'Edit';
+                    editButton.addEventListener('click', () => {
+                        editBook(book._id, book.name, book.author, book.year);
+                    });
+                    editButtonCell.appendChild(editButton);
+
+                    row.appendChild(nameCell);
+                    row.appendChild(authorCell);
+                    row.appendChild(yearCell);
+                    row.appendChild(deleteButtonCell);
+                    row.appendChild(editButtonCell);
+                    booksList.appendChild(row);
+                });
+            } else {
+                console.error('Error fetching books');
+            }
+        } catch (error) {
+            console.error('Error sending request:', error);
+        }
+    }
+
+    async function createBook(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('nameInput').value;
+        const author = document.getElementById('authorInput').value;
+        const year = document.getElementById('yearInput').value;
+
+        try {
+            const response = await fetch('/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    author,
+                    year: parseFloat(year),
+                }),
+            });
+
+            if (response.ok) {
+                console.log('Book created successfully');
+                document.getElementById('nameInput').value = '';
+                document.getElementById('authorInput').value = '';
+                document.getElementById('yearInput').value = '';
+                await fetchbooks();
+            } else {
+                console.error('Error creating Book');
+            }
+        } catch (error) {
+            console.error('Error sending request:', error);
+        }
+    }
+
+    async function deleteBook(bookId) {
+        try {
+            const response = await fetch(`/books/${bookId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                console.log('Book deleted successfully');
+                await fetchbooks();
+            } else {
+                console.error('Error deleting Book');
+            }
+        } catch (error) {
+            console.error('Error sending request:', error);
+        }
+    }
+
+    async function editBook(bookId, currentName, currentAuthor, currentYear) {
+        const newName = prompt('Enter new name:', currentName);
+        const newAuthor = prompt('Enter new author:', currentAuthor);
+        const newYear = prompt('Enter new year:', currentYear);
+
+
+        if (newName && newAuthor && newYear ) {
+            try {
+                const response = await fetch(`/books/${bookId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: newName,
+                        author: newAuthor,
+                        year: newYear,
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log('Book updated successfully');
+                    await fetchbooks();
+                } else {
+                    console.error('Error updating Book');
+                }
+            } catch (error) {
+                console.error('Error sending request:', error);
+            }
+        }
+    }
+
+    document.getElementById('createBookForm').addEventListener('submit', createBook);
+
+    window.addEventListener('load', fetchbooks);
+</script>
+</body>
+</html>
